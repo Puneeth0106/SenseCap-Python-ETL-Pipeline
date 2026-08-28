@@ -1,0 +1,23 @@
+# Local TimescaleDB for development and as the staging target for the
+# first manual pipeline run (BATCH_PIPELINE_ARCHITECTURE.md §17 step 13).
+services:
+  db:
+    image: timescale/timescaledb-ha:pg16
+    container_name: sensecap-timescaledb
+    environment:
+      POSTGRES_USER: sensecap
+      POSTGRES_PASSWORD: sensecap_dev
+      POSTGRES_DB: sensecap
+    ports:
+      - "5433:5432"
+    volumes:
+      - sensecap_pgdata:/var/lib/postgresql/data
+      - ./migrations:/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sensecap -d sensecap"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  sensecap_pgdata:
