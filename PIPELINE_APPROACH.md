@@ -106,18 +106,5 @@ To connect this pipeline efficiently to the application, we need to confirm:
 3. Does the application need raw data, cleaned data, or both?
 4. How often does the application need fresh data?
 5. Should missing values be left blank or filled?
-6. What timezone should timestamps use?
-7. Should data be shown by individual sensor, by location, or both?
+6. Should data be shown by individual sensor, by location, or both?
 
-## Current Recommendation
-
-Start with the simplest reliable system:
-
-```text
-GitHub Actions + Python + Supabase PostgreSQL
-```
-
-First, load raw telemetry correctly and safely.
-
-Then, after the application requirements are confirmed, add a cleaned or
-imputed data layer if needed.
