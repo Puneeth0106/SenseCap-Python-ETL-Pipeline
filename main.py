@@ -74,23 +74,15 @@ if __name__ == "__main__":
         "2CF7F1C060800087": "Beta",
     }
 
-    # 3. Jan-Apr 2026, one month at a time
+    # 3. Sep 2026 and Oct 1-7 2026, one month at a time
     MONTHS = [
         (
-            datetime(2026, 1, 1, tzinfo=timezone.utc),
-            datetime(2026, 2, 1, tzinfo=timezone.utc),
+            datetime(2026, 9, 1, tzinfo=timezone.utc),
+            datetime(2026, 10, 1, tzinfo=timezone.utc),
         ),
         (
-            datetime(2026, 2, 1, tzinfo=timezone.utc),
-            datetime(2026, 3, 1, tzinfo=timezone.utc),
-        ),
-        (
-            datetime(2026, 3, 1, tzinfo=timezone.utc),
-            datetime(2026, 4, 1, tzinfo=timezone.utc),
-        ),
-        (
-            datetime(2026, 4, 1, tzinfo=timezone.utc),
-            datetime(2026, 4, 14, tzinfo=timezone.utc),
+            datetime(2026, 10, 1, tzinfo=timezone.utc),
+            datetime(2026, 10, 8, tzinfo=timezone.utc),
         ),
     ]
 
