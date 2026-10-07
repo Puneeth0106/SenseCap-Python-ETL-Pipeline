@@ -12,6 +12,10 @@ Replaces `PIPELINE_APPROACH.md` and `NEW_APPROACH.md`. `BATCH_PIPELINE_ARCHITECT
 4. The raw table is never edited. Readers use a 10 minute view.
 5. Every run writes to `ingest_runs` and pings Healthchecks. Silence raises an alert.
 
+## How we work
+
+For every section: explain first, build, walk through the code, Puneeth runs one command, read the output together, 3 check questions, one small commit, add an entry to `NOTES.md`. Full loop in `CLAUDE.md`.
+
 ## Flow
 
 ```text
@@ -86,10 +90,10 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 
 ## 8. Cleanup and runbook
 
-- [ ] Delete `docker-compose.yml`.
+- [x] Delete `docker-compose.yml`.
 - [ ] README: how to run, how to backfill a gap (`--hours N`), how to rotate keys, what each alert means.
-- [ ] Update `CLAUDE.md` to the new current state.
-- [ ] Mark `PIPELINE_APPROACH.md` and `NEW_APPROACH.md` as replaced.
+- [x] Update `CLAUDE.md` to the new current state. Keep it current after each section.
+- [x] Remove `PIPELINE_APPROACH.md` and `NEW_APPROACH.md` (replaced by this file).
 - [ ] Stop the monthly manual CSV download. Keep `main.py` as a tool.
 
 ## 9. Optional: live stream

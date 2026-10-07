@@ -4,19 +4,44 @@
 
 Ingests soil sensor telemetry (temperature, moisture, conductivity) from the
 SenseCAP OpenAPI for two LoRaWAN devices (Alpha, Beta) and turns it into
-something queryable. Full target architecture, schema, and rationale live in
-`BATCH_PIPELINE_ARCHITECTURE.md` — that file is the source of truth; this one
-is the quick-orientation summary.
+something queryable.
+
+- Build order and status: the checklist in `STREAMING_PIPELINE_PLAN.md`. Follow it top to bottom.
+- Detailed design reference (schema, upsert, workflow, read-only role): `BATCH_PIPELINE_ARCHITECTURE.md`.
+- Where the two disagree, the checklist wins.
 
 ## End goal
 
-A daily unattended pipeline (GitHub Actions cron) that fetches only new
-telemetry since the last successful run and upserts it into a managed
-Supabase PostgreSQL database, plus a local dashboard (Grafana/Metabase, undecided)
-reading that database directly through a read-only role. Not real-time —
-once-daily freshness is the explicit requirement.
+An unattended pipeline on GitHub Actions: every 10 minutes it refetches the last
+3 hours, and once a day the last 72 hours, and upserts into a managed Supabase
+PostgreSQL database. Readers use the `sensor_readings_10min` view through a
+read-only role. Target: a reading is in the database within 20 minutes of the
+sensor sending it. An MQTT live stream is optional (checklist section 9).
 
-## Current state (as of Phase 0 + Phase 1)
+Five rules:
+1. One table, one key (`timestamp, device_eui, metric_id`), one upsert.
+2. One `to_utc()` used everywhere.
+3. Every run refetches a fixed window. Never "since last row" or `MAX(timestamp)`.
+4. The raw table is never edited. Readers use the 10 minute view.
+5. Every run writes to `ingest_runs` and pings Healthchecks.
+
+## How we work (learning loop)
+
+Puneeth wants to understand everything without writing the code himself. For
+every checklist section, in this order:
+
+1. Before: explain in 5 lines what is being built and why.
+2. Build: write the code, with a one line comment above every function.
+3. Walkthrough: explain the file top to bottom in plain words.
+4. Run: give Puneeth one command to run. He pastes the output.
+5. Read: explain his output line by line.
+6. Check: ask 3 quick questions to confirm it stuck.
+7. Commit: one small commit per checklist item, then tick the item in the plan.
+
+Also add a short entry to `NOTES.md` per section: what it does, why, the
+command, what can break. Keep replies short and specific. No em dashes.
+
+## Current state (Oct 7, 2026)
 
 Built:
 - `sensecap_client.py` — the shared extraction engine. Fetches telemetry from
@@ -31,26 +56,31 @@ Built:
   regression test run against a real captured API response
   (`tests/fixtures/sample_response.json`).
 
-Not built yet (Phase 2+):
-- `daily_load.py` — the actual production script. Does not exist. This is
-  what the GitHub Actions cron will run.
-- `backfill_load.py` — optional one-off historical backfill into the DB.
-- Applying `migrations/001_init.sql` to Supabase, `ingest_runs` audit table.
-- GitHub Actions workflow (`.github/workflows/daily_telemetry_sync.yml`).
-- The `telemetry_reader` read-only DB role and the dashboard itself.
+Not built yet (see the checklist):
+- `telemetry_store.py`: shared `to_utc`, `to_rows`, `upsert_rows`, run logging.
+- `daily_load.py --hours N`: the production loader. Does not exist yet.
+- `migrations/002_views.sql`: the `sensor_readings_10min` view.
+- Applying the migrations to Supabase, and the `telemetry_reader` role.
+- GitHub Actions workflow (`.github/workflows/telemetry_sync.yml`).
+- Healthchecks alerts (`job-ran`, `alpha-fresh`).
+
+Known sensor state (Oct 7, 2026):
+- Beta has been offline since before Sept 1, 2026. Known and accepted. Do not
+  chase it. Set `is_active = false`; it loads on its own when it returns.
+- Alpha has no data on Sept 2 to 10 and Sept 12 to 30. The gaps are real, not
+  a script bug.
 
 ## Script roles — don't conflate these
 
 | Script | Status | Range | Output |
 |---|---|---|---|
-| `main.py` | exists | custom, hardcoded `START_DATE`/`END_DATE` | CSV files |
-| `daily_load.py` | **not built** | automatic — `MAX(timestamp)` in DB minus 24h overlap | Supabase Postgres |
-| `backfill_load.py` | not built, optional | custom, explicit `START_DATE`/`END_DATE` | Supabase Postgres |
+| `main.py` | exists | custom, hardcoded `MONTHS` list | CSV files in `data/` |
+| `daily_load.py` | **not built** | fixed window, `--hours N` (3 every 10 minutes, 72 daily, 2160 for the 90 day backfill) | Supabase Postgres |
 
-**The production daily job never takes a manual date range.** Custom ranges
-are only for `main.py` (CSV, dev use) and `backfill_load.py` (DB, one-off
-historical loads). Both future scripts should reuse `sensecap_client.py`
-rather than reimplementing fetch/pagination logic.
+**The loader never starts from `MAX(timestamp)`.** It refetches a fixed window
+and the upsert makes that safe. There is no separate backfill script: a
+backfill is `daily_load.py` with a larger `--hours`. Both scripts reuse
+`sensecap_client.py` rather than reimplementing fetch/pagination logic.
 
 ## Repo layout
 
@@ -66,7 +96,10 @@ conftest.py            # empty; puts repo root on sys.path for pytest
 tests/
   test_sensecap_client.py
   fixtures/sample_response.json   # real captured API response
-BATCH_PIPELINE_ARCHITECTURE.md    # full target design — source of truth
+STREAMING_PIPELINE_PLAN.md        # build checklist, follow this
+BATCH_PIPELINE_ARCHITECTURE.md    # detailed design reference
+migrations/001_init.sql           # tables and wide view
+data/                             # CSV exports from main.py, git-ignored
 .env                    # SENSECAP_API_ID, SENSECAP_API_KEY, SENSECAP_BASE_URL, DEVICE_EUIS
 ```
 
@@ -106,6 +139,7 @@ logic only.
 
 Resolved design: internal dashboard, single local viewer, direct DB
 connection (no API layer), tool undecided (Grafana/Metabase preferred,
-Streamlit/Dash fallback), daily freshness, managed cloud Postgres hosting.
+Streamlit/Dash fallback), 10 minute freshness, managed cloud Postgres hosting.
+It reads the `sensor_readings_10min` view.
 The dashboard uses a dedicated read-only `telemetry_reader` role — never the
 ETL's write-capable credentials.
