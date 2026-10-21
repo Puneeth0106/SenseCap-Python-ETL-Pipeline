@@ -56,6 +56,10 @@ Built:
   regression test run against a real captured API response
   (`tests/fixtures/sample_response.json`).
 
+Done: Section 0 (Oct 21, 2026). Supabase project on the session pooler
+(`us-west-2`, port 5432), Healthchecks checks `job-ran` and `alpha-fresh`
+created but not pinged yet, repo is public, history checked for keys.
+
 Not built yet (see the checklist):
 - `telemetry_store.py`: shared `to_utc`, `to_rows`, `upsert_rows`, run logging.
 - `daily_load.py --hours N`: the production loader. Does not exist yet.
@@ -100,7 +104,10 @@ STREAMING_PIPELINE_PLAN.md        # build checklist, follow this
 BATCH_PIPELINE_ARCHITECTURE.md    # detailed design reference
 migrations/001_init.sql           # tables and wide view
 data/                             # CSV exports from main.py, git-ignored
-.env                    # SENSECAP_API_ID, SENSECAP_API_KEY, SENSECAP_BASE_URL, DEVICE_EUIS
+.env                    # SENSECAP_API_ID, SENSECAP_API_KEY, SENSECAP_BASE_URL, DEVICE_EUIS,
+                        # DATABASE_URL, HC_JOB_URL, HC_ALPHA_URL
+.venv/                  # local Python env, git-ignored
+NOTES.md                # one entry per checklist section
 ```
 
 ## Things learned the hard way (don't relitigate)

@@ -24,12 +24,12 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 
 ## 0. Setup
 
-- [ ] Create the Supabase project.
-- [ ] Copy the session pooler connection string (the direct one is IPv6 and fails on GitHub).
-- [ ] Create a Healthchecks.io account with two checks: `job-ran` and `alpha-fresh`.
-- [ ] Decide: public repo (free Actions) or private (2,000 minutes a month, so run every 30 minutes).
-- [ ] If public: check that git history holds no keys first.
-- [ ] Add `DATABASE_URL`, `HC_JOB_URL`, `HC_ALPHA_URL` to `.env`.
+- [x] Create the Supabase project.
+- [x] Copy the session pooler connection string (the direct one is IPv6 and fails on GitHub).
+- [x] Create a Healthchecks.io account with two checks: `job-ran` and `alpha-fresh`.
+- [x] Decide: public repo (free Actions) or private (2,000 minutes a month, so run every 30 minutes). Chosen: public (it already was).
+- [x] If public: check that git history holds no keys first. Clean on Oct 7: no API keys, no `.env`, no CSVs ever committed.
+- [x] Add `DATABASE_URL`, `HC_JOB_URL`, `HC_ALPHA_URL` to `.env`.
 
 ## 1. Database
 
