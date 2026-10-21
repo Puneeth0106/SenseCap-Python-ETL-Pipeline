@@ -33,19 +33,19 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 
 ## 1. Database
 
-- [ ] Run `migrations/001_init.sql` in the Supabase SQL editor.
-- [ ] Write and run `migrations/002_views.sql`: `sensor_readings_10min`, one row per device and 10 minute bucket, latest value per metric.
-- [ ] Point `sensor_telemetry_wide` at the 10 minute view.
-- [ ] Insert Alpha and Beta into `sensor_devices`. Set Beta `is_active = false`.
-- [ ] Create the `telemetry_reader` read-only role (section 14.2 of the architecture doc).
+- [x] Run `migrations/001_init.sql` in the Supabase SQL editor.
+- [x] Write and run `migrations/002_views.sql`: `sensor_readings_10min`, one row per device and 10 minute bucket, latest value per metric.
+- [x] Point `sensor_telemetry_wide` at the 10 minute view.
+- [x] Insert Alpha and Beta into `sensor_devices`. Set Beta `is_active = false`.
+- [x] Create the `telemetry_reader` read-only role (section 14.2 of the architecture doc).
 
 ## 2. Shared code: `telemetry_store.py`
 
-- [ ] `to_utc(raw)`: ISO "Z" strings and epoch milliseconds give the same UTC datetime.
-- [ ] `to_rows(headers, values_groups, eui, alias)`: one row per point, unknown metric stored as `ID_<id>`, exact duplicates dropped.
-- [ ] `upsert_rows(conn, rows)`: `ON CONFLICT (timestamp, device_eui, metric_id) DO UPDATE`.
-- [ ] `start_run()` and `finish_run()` for `ingest_runs`.
-- [ ] Unit tests for `to_utc` and `to_rows` using the existing fixture.
+- [x] `to_utc(raw)`: ISO "Z" strings and epoch milliseconds give the same UTC datetime.
+- [x] `to_rows(headers, values_groups, eui, alias)`: one row per point, unknown metric stored as `ID_<id>`, exact duplicates dropped.
+- [x] `upsert_rows(conn, rows)`: `ON CONFLICT (timestamp, device_eui, metric_id) DO UPDATE`.
+- [x] `start_run()` and `finish_run()` for `ingest_runs`.
+- [x] Unit tests for `to_utc` and `to_rows` using the existing fixture.
 
 ## 3. Loader: `daily_load.py`
 
