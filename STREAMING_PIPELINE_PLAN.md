@@ -49,14 +49,14 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 
 ## 3. Loader: `daily_load.py`
 
-- [ ] `--hours N` argument. Window is now minus N hours to now.
-- [ ] Fail fast if `SENSECAP_API_ID`, `SENSECAP_API_KEY` or `DATABASE_URL` is missing.
-- [ ] Load every device in the config. Beta costs one empty call and loads on its own when it returns.
-- [ ] Split windows longer than 30 days into 30 day chunks (API limit).
-- [ ] Reuse `paginate_telemetry` from `sensecap_client.py`. Do not rewrite it.
-- [ ] One transaction per device.
-- [ ] Record `api_calls`, `rows_fetched`, `rows_loaded` and `status` in `ingest_runs`.
-- [ ] Exit non-zero on failure. Use `logging`. Never log keys or the database URL.
+- [x] `--hours N` argument. Window is now minus N hours to now.
+- [x] Fail fast if `SENSECAP_API_ID`, `SENSECAP_API_KEY` or `DATABASE_URL` is missing.
+- [x] Load every device in the config. Beta costs one empty call and loads on its own when it returns.
+- [x] Split windows longer than 30 days into 30 day chunks (API limit).
+- [x] Reuse `paginate_telemetry` from `sensecap_client.py`. Do not rewrite it.
+- [x] One transaction per device.
+- [x] Record `api_calls`, `rows_fetched`, `rows_loaded` and `status` in `ingest_runs`.
+- [x] Exit non-zero on failure. Use `logging`. Never log keys or the database URL.
 
 ## 4. Backfill and verify
 

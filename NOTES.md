@@ -74,3 +74,25 @@ Expect: 12 passed.
 - `psycopg` (v3) uses `%s` placeholders and `executemany` with dicts requires `%(key)s` syntax — do not use `?` or positional tuples.
 - `upsert_rows` commits nothing itself; the caller must commit (or use a transaction context). `start_run` and `finish_run` each call `conn.commit()` explicitly.
 - An unknown metric ID is stored as `ID_<id>` and never raises an error — check logs if a new sensor type appears.
+
+## Section 3: `daily_load.py` (Oct 21, 2026)
+
+**What:** Production loader CLI. `--hours N` sets the window. Fetches all active devices, upserts to Supabase, records the run in `ingest_runs`.
+
+**Why:**
+- Fixed rolling window (never `MAX(timestamp)`) so gaps heal on the next run.
+- 30-day chunk splitting prevents silent API truncation on wide windows.
+- One transaction per page, per device — a mid-run crash leaves partial data but no corruption; the next run fills the gap.
+- Exits non-zero on failure so GitHub Actions marks the job red and Healthchecks silence fires.
+
+**Command:**
+```bash
+source .venv/bin/activate
+python daily_load.py --hours 3
+```
+Watch for log lines: `fetching ...`, `api_calls=N rows_fetched=N rows_loaded=N`, `Done:`.
+
+**What can break:**
+- `DEVICE_EUIS` in `.env` must be comma-separated EUIs matching `sensor_devices.device_eui` exactly.
+- A device not in `sensor_devices` will still fetch data but `upsert_rows` will fail the FK constraint. Seed the device first.
+- The session pooler URL (port 5432) is required — the direct connection (IPv6) fails on GitHub Actions runners.
