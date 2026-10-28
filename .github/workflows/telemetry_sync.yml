@@ -1,0 +1,51 @@
+name: Telemetry sync
+on:
+  push:
+  schedule:
+    - cron: '3-59/10 * * * *'
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: Hours to fetch
+        required: true
+        default: '3'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python -m pytest . -q
+
+  sync:
+    if: github.event_name != 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: telemetry-sync
+      cancel-in-progress: false
+    env:
+      SENSECAP_API_ID: ${{ secrets.SENSECAP_API_ID }}
+      SENSECAP_API_KEY: ${{ secrets.SENSECAP_API_KEY }}
+      SENSECAP_BASE_URL: ${{ secrets.SENSECAP_BASE_URL }}
+      DEVICE_EUIS: ${{ secrets.DEVICE_EUIS }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      HC_JOB_URL: ${{ secrets.HC_JOB_URL }}
+      HC_ALPHA_URL: ${{ secrets.HC_ALPHA_URL }}
+      HOURS: ${{ inputs.hours || (github.event.schedule == '17 2 * * *' && '72') || '3' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python daily_load.py --hours "$HOURS"

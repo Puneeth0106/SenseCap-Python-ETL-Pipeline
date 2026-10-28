@@ -15,6 +15,7 @@ import sys
 from datetime import UTC, datetime, timedelta
 
 import psycopg
+import requests
 from dotenv import dotenv_values
 
 from sensecap_client import paginate_telemetry
@@ -104,6 +105,27 @@ def _alias(conn, eui):
     return row[0] if row else eui
 
 
+# Sends a successful-run signal without exposing the check URL in logs.
+def _ping(url, name):
+    if not url:
+        log.warning("%s check URL is missing", name)
+        return
+    try:
+        requests.get(url, timeout=10).raise_for_status()
+    except requests.RequestException:
+        log.warning("Could not ping %s check", name)
+
+
+# Checks the latest Alpha reading before signaling sensor freshness.
+def _alpha_is_fresh(conn):
+    row = conn.execute(
+        "SELECT max(timestamp) FROM sensor_telemetry WHERE device_alias = %s",
+        ("Alpha",),
+    ).fetchone()
+    return bool(row and row[0] and timedelta(0) <= datetime.now(UTC) - row[0] < timedelta(minutes=30))
+
+
+# Runs the fixed-window loader and records its result.
 def main():
     parser = argparse.ArgumentParser(
         description="Load SenseCAP telemetry into Supabase."
@@ -150,10 +172,15 @@ def main():
         rows_loaded=total_loaded,
         error_message=error_msg,
     )
-    conn.close()
-
     if overall_status != "success":
+        conn.close()
         sys.exit(1)
+
+    fresh = _alpha_is_fresh(conn)
+    conn.close()
+    _ping(env.get("HC_JOB_URL"), "job-ran")
+    if fresh:
+        _ping(env.get("HC_ALPHA_URL"), "alpha-fresh")
 
     log.info(
         "Done: api_calls=%d rows_fetched=%d rows_loaded=%d",
