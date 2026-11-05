@@ -1,7 +1,24 @@
+# Secrets
 .env
+.env.*
+!.env.example
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Tool caches
 .pytest_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+
+# Local data exports from main.py
 data/
-.venv/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
