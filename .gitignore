@@ -22,3 +22,6 @@ data/
 .vscode/
 .idea/
 .DS_Store
+
+# uv lockfile (project uses requirements.txt)
+uv.lock
