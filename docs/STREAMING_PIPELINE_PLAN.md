@@ -14,7 +14,7 @@ Replaces `PIPELINE_APPROACH.md` and `NEW_APPROACH.md`. `BATCH_PIPELINE_ARCHITECT
 
 ## How we work
 
-For every section: explain first, build, walk through the code, Puneeth runs one command, read the output together, 3 check questions, one small commit, add an entry to `NOTES.md`. Full loop in `CLAUDE.md`.
+For every section: explain first, build, walk through the code, Puneeth runs one command, read the output together, 3 check questions, one small commit, add an entry to `NOTES.md`. Full loop in `CLAUDE.md` at the repo root.
 
 ## Flow
 
@@ -67,16 +67,16 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 
 ## 5. Automation
 
-- [ ] `.github/workflows/telemetry_sync.yml` with two schedules: `3-59/10 * * * *` runs `--hours 3`, and `17 2 * * *` runs `--hours 72`.
-- [ ] Add `workflow_dispatch` with an hours input for manual backfills.
-- [ ] `concurrency` group, `cancel-in-progress: false`, `timeout-minutes: 10`.
+- [x] `.github/workflows/telemetry_sync.yml` with two schedules: `3-59/10 * * * *` runs `--hours 3`, and `17 2 * * *` runs `--hours 72`.
+- [x] Add `workflow_dispatch` with an hours input for manual backfills.
+- [x] `concurrency` group, `cancel-in-progress: false`, `timeout-minutes: 10`.
 - [ ] GitHub secrets: `SENSECAP_API_ID`, `SENSECAP_API_KEY`, `DATABASE_URL`, `HC_JOB_URL`, `HC_ALPHA_URL`.
-- [ ] Separate CI job: `pytest` on every push.
+- [x] Separate CI job: `pytest` on every push.
 
 ## 6. Alerts
 
-- [ ] End of each successful run: ping `job-ran` (period 10 minutes, grace 30).
-- [ ] Ping `alpha-fresh` only when Alpha's newest row is under 30 minutes old (period 10 minutes, grace 60).
+- [x] End of each successful run: ping `job-ran` (period 10 minutes, grace 30).
+- [x] Ping `alpha-fresh` only when Alpha's newest row is under 30 minutes old (period 10 minutes, grace 60).
 - [ ] Set Healthchecks to email you [FILL: or Slack].
 - [ ] No check for Beta until it is back in the field.
 
