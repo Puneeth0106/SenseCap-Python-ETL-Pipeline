@@ -82,16 +82,16 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 
 ## 7. Reliability tests
 
-- [ ] Same window twice: 0 new rows.
-- [ ] Kill a run midway, then rerun: complete, no duplicates.
-- [ ] Wrong database password: run fails and the `job-ran` alert arrives.
+- [x] Same window twice: 0 new rows. Nov 5: see section 4.
+- [x] Kill a run midway, then rerun: complete, no duplicates. Nov 5: 0 duplicate keys. Killed runs now close as `abandoned`.
+- [x] Wrong database password: run fails and the `job-ran` alert arrives. Nov 5: email at 21:36 UTC, on time.
 - [ ] Disable the workflow for 2 hours: `alpha-fresh` alert arrives. Enable it again and the gap fills.
 - [ ] 24 hours unattended: every run is `success` and Alpha has about 144 rows in the 10 minute view.
 
 ## 8. Cleanup and runbook
 
 - [x] Delete `docker-compose.yml`.
-- [ ] README: how to run, how to backfill a gap (`--hours N`), how to rotate keys, what each alert means.
+- [x] README: how to run, how to backfill a gap (`--hours N`), how to rotate keys, what each alert means.
 - [x] Update `CLAUDE.md` to the new current state. Keep it current after each section.
 - [x] Remove `PIPELINE_APPROACH.md` and `NEW_APPROACH.md` (replaced by this file).
 - [ ] Stop the monthly manual CSV download. Keep `main.py` as a tool.
