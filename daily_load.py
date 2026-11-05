@@ -5,7 +5,7 @@ into sensor_telemetry via telemetry_store.
 Usage:
   python daily_load.py --hours 3       # every-10-min job
   python daily_load.py --hours 72      # nightly job
-  python daily_load.py --hours 2160    # 90-day backfill
+  python daily_load.py --hours 2136    # 89-day backfill (SenseCAP keeps 90 days)
 """
 
 import argparse
