@@ -6,8 +6,8 @@ Ingests soil sensor telemetry (temperature, moisture, conductivity) from the
 SenseCAP OpenAPI for two LoRaWAN devices (Alpha, Beta) and turns it into
 something queryable.
 
-- Build order and status: the checklist in `STREAMING_PIPELINE_PLAN.md`. Follow it top to bottom.
-- Detailed design reference (schema, upsert, workflow, read-only role): `BATCH_PIPELINE_ARCHITECTURE.md`.
+- Build order and status: the checklist in `docs/STREAMING_PIPELINE_PLAN.md`. Follow it top to bottom.
+- Detailed design reference (schema, upsert, workflow, read-only role): `docs/BATCH_PIPELINE_ARCHITECTURE.md`.
 - Where the two disagree, the checklist wins.
 
 ## End goal
@@ -38,35 +38,25 @@ every checklist section, in this order:
 6. Check: ask 3 quick questions to confirm it stuck.
 7. Commit: one small commit per checklist item, then tick the item in the plan.
 
-Also add a short entry to `NOTES.md` per section: what it does, why, the
+Also add a short entry to `docs/NOTES.md` per section: what it does, why, the
 command, what can break. Keep replies short and specific. No em dashes.
 
-## Current state (Oct 7, 2026)
+## Current state (Nov 5, 2026)
 
-Built:
-- `sensecap_client.py` — the shared extraction engine. Fetches telemetry from
-  SenseCAP, retries transient failures (`tenacity`), classifies SenseCAP's
-  body-level `code` field into retryable vs. permanent errors, and handles
-  the backward-pagination trick needed because the API's 1000-point cap is
-  shared across all three metrics per call (see `compute_next_boundary`).
-- `main.py` — manual CSV export tool. Pulls a hardcoded custom date range and
-  writes pivoted monthly CSVs. This is a dev utility, not production — see
-  below.
-- `tests/` — unit tests for the pagination/timestamp logic, including a
-  regression test run against a real captured API response
-  (`tests/fixtures/sample_response.json`).
+Built (sections 0 to 3, plus the workflow and pings for 5 and 6):
+- `sensecap_client.py`: shared fetch engine. Retries transient failures
+  (`tenacity`), classifies SenseCAP's body-level `code` into retryable vs.
+  permanent, and handles backward pagination for the shared 1000-point cap
+  (see `compute_next_boundary`).
+- `telemetry_store.py`: `to_utc`, `to_rows`, `upsert_rows`, `start_run`, `finish_run`.
+- `daily_load.py --hours N`: the production loader. Pings `job-ran` on success
+  and `alpha-fresh` when Alpha's newest row is under 30 minutes old.
+- `migrations/001` to `003`, applied to Supabase. `telemetry_reader` role exists.
+- `.github/workflows/telemetry_sync.yml`: CI (ruff, pytest) on push, sync on schedule.
+- `main.py`: manual CSV export tool. Dev utility, not production.
 
-Done: Section 0 (Oct 21, 2026). Supabase project on the session pooler
-(`us-west-2`, port 5432), Healthchecks checks `job-ran` and `alpha-fresh`
-created but not pinged yet, repo is public, history checked for keys.
-
-Not built yet (see the checklist):
-- `telemetry_store.py`: shared `to_utc`, `to_rows`, `upsert_rows`, run logging.
-- `daily_load.py --hours N`: the production loader. Does not exist yet.
-- `migrations/002_views.sql`: the `sensor_readings_10min` view.
-- Applying the migrations to Supabase, and the `telemetry_reader` role.
-- GitHub Actions workflow (`.github/workflows/telemetry_sync.yml`).
-- Healthchecks alerts (`job-ran`, `alpha-fresh`).
+Next: section 4 (backfill and verify). Not yet verified on GitHub: secrets,
+schedules, alerts. No `docs/NOTES.md` entries yet for sections 5 and 6.
 
 Known sensor state (Oct 7, 2026):
 - Beta has been offline since before Sept 1, 2026. Known and accepted. Do not
@@ -79,7 +69,7 @@ Known sensor state (Oct 7, 2026):
 | Script | Status | Range | Output |
 |---|---|---|---|
 | `main.py` | exists | custom, hardcoded `MONTHS` list | CSV files in `data/` |
-| `daily_load.py` | **not built** | fixed window, `--hours N` (3 every 10 minutes, 72 daily, 2160 for the 90 day backfill) | Supabase Postgres |
+| `daily_load.py` | exists | fixed window, `--hours N` (3 every 10 minutes, 72 daily, 2160 for the 90 day backfill) | Supabase Postgres |
 
 **The loader never starts from `MAX(timestamp)`.** It refetches a fixed window
 and the upsert makes that safe. There is no separate backfill script: a
@@ -93,21 +83,25 @@ reverted from a nested `src/local-data-downloaders/` layout per explicit
 instruction; keep it flat):
 
 ```
-sensecap_client.py   # shared SenseCAP fetch + pagination engine
-main.py               # manual CSV export tool
-requirements.txt
+sensecap_client.py     # shared SenseCAP fetch + pagination engine
+telemetry_store.py     # to_utc, to_rows, upsert_rows, run logging
+daily_load.py          # production loader, --hours N
+main.py                # manual CSV export tool
 conftest.py            # empty; puts repo root on sys.path for pytest
-tests/
-  test_sensecap_client.py
-  fixtures/sample_response.json   # real captured API response
-STREAMING_PIPELINE_PLAN.md        # build checklist, follow this
-BATCH_PIPELINE_ARCHITECTURE.md    # detailed design reference
-migrations/001_init.sql           # tables and wide view
-data/                             # CSV exports from main.py, git-ignored
-.env                    # SENSECAP_API_ID, SENSECAP_API_KEY, SENSECAP_BASE_URL, DEVICE_EUIS,
-                        # DATABASE_URL, HC_JOB_URL, HC_ALPHA_URL
-.venv/                  # local Python env, git-ignored
-NOTES.md                # one entry per checklist section
+requirements.txt       # runtime deps
+requirements-dev.txt   # + pytest, ruff
+pyproject.toml         # ruff and pytest config
+.env.example           # env var template; real values in .env (git-ignored)
+README.md              # setup, usage, status
+AGENTS.md              # symlink to CLAUDE.md (for Codex). Edit CLAUDE.md only.
+migrations/            # 001_init, 002_views, 003_latest_bucket_values
+tests/                 # unit tests + fixtures/sample_response.json
+docs/
+  STREAMING_PIPELINE_PLAN.md      # build checklist, follow this
+  BATCH_PIPELINE_ARCHITECTURE.md  # detailed design reference
+  NOTES.md                        # one entry per checklist section
+.github/workflows/telemetry_sync.yml
+data/                  # CSV exports from main.py, git-ignored
 ```
 
 ## Things learned the hard way (don't relitigate)
@@ -136,7 +130,8 @@ NOTES.md                # one entry per checklist section
 ## Running tests
 
 ```
-python3 -m pytest . -q
+ruff check .
+python -m pytest
 ```
 
 No live API calls in the test suite — it runs against fixtures and pure
