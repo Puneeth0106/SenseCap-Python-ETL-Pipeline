@@ -61,18 +61,68 @@ CI runs both on every push.
 | `docs/BATCH_PIPELINE_ARCHITECTURE.md` | Detailed design reference |
 | `docs/NOTES.md` | One entry per checklist section |
 
+## Runbook
+
+### What each alert means
+
+| Email | Meaning | What to do |
+|---|---|---|
+| Healthchecks: `job-ran` is DOWN | No successful run for 40 minutes. The job is failing or not running. | Open GitHub Actions, read the newest failed run, fix the cause below. |
+| Healthchecks: `alpha-fresh` is DOWN | Runs work, but Alpha's newest reading is over 30 minutes old (alert after 70 minutes). | Usually the sensor or its gateway. Check Alpha in the SenseCAP portal. If `job-ran` is also down, fix that first. |
+| GitHub: "Run failed: Telemetry sync" | One run failed. One failure alone is not urgent; the next run retries. | Act only if it keeps failing or `job-ran` goes down. |
+| Healthchecks: is UP | Back to normal. | Nothing. |
+
+### Common failures in the run log
+
+| Error | Cause | Fix |
+|---|---|---|
+| `code=11104 AccessId or accessKey error` | Wrong SenseCAP ID or key in GitHub secrets | Set the secrets again (see "Change keys") |
+| `password authentication failed` | Wrong `DATABASE_URL` | Set the secret again from Supabase |
+| `code=11202 Request parameters are invalid` | Window starts more than 90 days back | Use `--hours 2136` or less |
+| `Missing required env vars` | A secret is missing | Add it in GitHub, Settings, Secrets, Actions |
+| Run log says `abandoned` | A run was killed before it finished | Nothing. The next run refetches the window. |
+
+### Fill a gap
+
+The 10 minute job refetches 3 hours, and the nightly job 72 hours. So any outage
+under 3 days heals by itself. For a longer one, run a backfill that covers it:
+
+- On GitHub: Actions, Telemetry sync, Run workflow, set `hours`.
+- On a laptop: `python daily_load.py --hours N`.
+
+Max is 2136 (89 days). SenseCAP deletes older data, so a gap older than
+90 days cannot be refilled.
+
+### Change keys
+
+1. Make the new key (SenseCAP portal or Supabase).
+2. Put it in your local `.env` and test: `python daily_load.py --hours 1`.
+3. Copy it to GitHub. Either paste it in Settings, Secrets, Actions,
+   or run `gh secret set NAME`. Watch for extra spaces or quotes.
+4. Run the workflow once by hand and check that it succeeds.
+5. Delete the old key.
+
+Secrets used: `SENSECAP_API_ID`, `SENSECAP_API_KEY`, `SENSECAP_BASE_URL`,
+`DEVICE_EUIS`, `DATABASE_URL`, `HC_JOB_URL`, `HC_ALPHA_URL`.
+
+Note: a laptop run also pings Healthchecks, so it can hide a broken GitHub job.
+
+### Check that it is working
+
+```sql
+-- Last 10 runs, newest first
+SELECT started_at, status, trigger_source, rows_loaded, error_message
+FROM ingest_runs ORDER BY started_at DESC LIMIT 10;
+
+-- Newest Alpha reading
+SELECT max(timestamp) FROM sensor_telemetry WHERE device_alias = 'Alpha';
+```
+
 ## Status
 
-Built: schema and views, shared store, loader, scheduled workflow, Healthchecks pings.
-
-Not yet verified (checklist sections 4 to 7):
-
-- 90 day backfill matches the October CSV, and a rerun adds no rows.
-- Scheduled runs work on GitHub with the secrets set.
-- Alerts fire when the job fails or Alpha goes quiet.
-- Recovery after an interrupted run, and 24 hours unattended.
-- Readings arrive within 20 minutes.
+Built and running on GitHub every 10 minutes. Verified so far: the backfill
+matches the October CSV, reruns add no rows, a killed run recovers, and a
+failing job sends the `job-ran` alert. Still to verify: the Alpha silence
+alert, outage refill, and 24 hours unattended.
 
 Beta is offline and marked inactive. It loads on its own when it returns.
-
-Still to write (section 8): key rotation steps and what each alert means.
