@@ -60,9 +60,9 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 
 ## 4. Backfill and verify
 
-- [ ] Run `python daily_load.py --hours 2160` (90 days).
-- [ ] Alpha timestamps in the database for Oct 1 to Oct 7 14:44 UTC equal the 2,363 rows in `alpha_october_2026.csv`.
-- [ ] Run it again. Row count does not change.
+- [x] Run `python daily_load.py --hours 2136` (89 days; SenseCAP rejects starts older than 90 days with code 11202). Nov 5: 43,346 Alpha rows.
+- [x] Alpha timestamps in the database for Oct 1 to Oct 7 14:44 UTC equal the 2,363 rows in `alpha_october_2026.csv`. Nov 5: 2,363 of 2,363 match, 0 missing, 0 extra.
+- [x] Run it again. Row count does not change. Nov 5: 43,173 before and after.
 - [ ] Optional: load older monthly CSVs with a small `load_csv.py`.
 
 ## 5. Automation
@@ -70,14 +70,14 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 - [x] `.github/workflows/telemetry_sync.yml` with two schedules: `3-59/10 * * * *` runs `--hours 3`, and `17 2 * * *` runs `--hours 72`.
 - [x] Add `workflow_dispatch` with an hours input for manual backfills.
 - [x] `concurrency` group, `cancel-in-progress: false`, `timeout-minutes: 10`.
-- [ ] GitHub secrets: `SENSECAP_API_ID`, `SENSECAP_API_KEY`, `DATABASE_URL`, `HC_JOB_URL`, `HC_ALPHA_URL`.
+- [x] GitHub secrets: `SENSECAP_API_ID`, `SENSECAP_API_KEY`, `DATABASE_URL`, `HC_JOB_URL`, `HC_ALPHA_URL`.
 - [x] Separate CI job: `pytest` on every push.
 
 ## 6. Alerts
 
 - [x] End of each successful run: ping `job-ran` (period 10 minutes, grace 30).
 - [x] Ping `alpha-fresh` only when Alpha's newest row is under 30 minutes old (period 10 minutes, grace 60).
-- [ ] Set Healthchecks to email you [FILL: or Slack].
+- [x] Set Healthchecks to email you.
 - [ ] No check for Beta until it is back in the field.
 
 ## 7. Reliability tests

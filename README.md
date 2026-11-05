@@ -29,7 +29,7 @@ Apply the migrations in order in the Supabase SQL editor:
 ```bash
 python daily_load.py --hours 3      # same as the 10 minute job
 python daily_load.py --hours 72     # same as the nightly job
-python daily_load.py --hours 2160   # 90 day backfill
+python daily_load.py --hours 2136   # 89 day backfill (SenseCAP keeps 90 days)
 python main.py                      # manual CSV export to data/ (dev tool)
 ```
 

@@ -69,7 +69,7 @@ Known sensor state (Oct 7, 2026):
 | Script | Status | Range | Output |
 |---|---|---|---|
 | `main.py` | exists | custom, hardcoded `MONTHS` list | CSV files in `data/` |
-| `daily_load.py` | exists | fixed window, `--hours N` (3 every 10 minutes, 72 daily, 2160 for the 90 day backfill) | Supabase Postgres |
+| `daily_load.py` | exists | fixed window, `--hours N` (3 every 10 minutes, 72 daily, 2136 for the 89 day backfill, SenseCAP keeps only 90 days) | Supabase Postgres |
 
 **The loader never starts from `MAX(timestamp)`.** It refetches a fixed window
 and the upsert makes that safe. There is no separate backfill script: a
