@@ -10,7 +10,7 @@ Functions:
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sensecap_client import MEASUREMENTS
 
@@ -86,6 +86,24 @@ def start_run(conn, trigger_source=None, devices_requested=0):
         )
     conn.commit()
     return run_id
+
+
+# Marks runs stuck in 'running' longer than max_age as failed (killed runs never finish).
+def close_stale_runs(conn, max_age=timedelta(minutes=30)):
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE ingest_runs
+            SET status = 'failed',
+                finished_at = %s,
+                error_message = 'abandoned: run was killed before it finished'
+            WHERE status = 'running' AND started_at < %s
+            """,
+            (datetime.now(UTC), datetime.now(UTC) - max_age),
+        )
+        closed = cur.rowcount
+    conn.commit()
+    return closed
 
 
 # Closes an ingest_runs record with final counts and status ('success' or 'failed').

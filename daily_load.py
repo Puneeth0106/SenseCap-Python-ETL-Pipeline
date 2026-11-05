@@ -12,6 +12,7 @@ import argparse
 import logging
 import os
 import sys
+import time
 from datetime import UTC, datetime, timedelta
 
 import psycopg
@@ -19,7 +20,7 @@ import requests
 from dotenv import dotenv_values
 
 from sensecap_client import paginate_telemetry
-from telemetry_store import finish_run, start_run, to_rows, upsert_rows
+from telemetry_store import close_stale_runs, finish_run, start_run, to_rows, upsert_rows
 
 # Maximum days per API call; the SenseCAP API returns no data for wider windows.
 MAX_CHUNK_DAYS = 30
@@ -29,6 +30,8 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%SZ",
 )
+# Log times in UTC so the trailing "Z" is true on a laptop too.
+logging.Formatter.converter = time.gmtime
 log = logging.getLogger(__name__)
 
 
@@ -97,6 +100,12 @@ def _load_device(conn, eui, alias, start_dt, end_dt, env):
     return api_calls, rows_fetched, rows_loaded
 
 
+# Names what started this run: "github-schedule", "github-workflow_dispatch", or "cli".
+def _trigger_source(env):
+    event = env.get("GITHUB_EVENT_NAME")
+    return f"github-{event}" if event else "cli"
+
+
 # Looks up the device alias from sensor_devices; falls back to the EUI if not found.
 def _alias(conn, eui):
     row = conn.execute(
@@ -146,7 +155,12 @@ def main():
     # Use prepare_threshold=None for pgBouncer / Supabase session pooler compatibility.
     conn = psycopg.connect(env["DATABASE_URL"], prepare_threshold=None)
 
-    run_id = start_run(conn, trigger_source="cli", devices_requested=len(device_euis))
+    closed = close_stale_runs(conn)
+    if closed:
+        log.warning("Marked %d stale 'running' run(s) as failed", closed)
+    run_id = start_run(
+        conn, trigger_source=_trigger_source(env), devices_requested=len(device_euis)
+    )
     total_api_calls = total_fetched = total_loaded = 0
     overall_status = "success"
     error_msg = None
