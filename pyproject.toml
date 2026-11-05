@@ -1,0 +1,18 @@
+[project]
+name = "sensecap-streaming-pipeline"
+version = "0.1.0"
+description = "Loads SenseCAP soil sensor telemetry into Supabase Postgres on a schedule."
+readme = "README.md"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

@@ -1,0 +1,4 @@
+# Test and lint tools. Installs the runtime set too.
+-r requirements.txt
+pytest>=8.0.0
+ruff>=0.6.0
