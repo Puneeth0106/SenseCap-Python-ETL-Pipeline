@@ -96,7 +96,7 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 - [x] Remove `PIPELINE_APPROACH.md` and `NEW_APPROACH.md` (replaced by this file).
 - [x] ~~Stop the monthly manual CSV download.~~ Decided Nov 9: keep the monthly CSV download as a backup. Keep `main.py` as a tool.
 
-## 9. Optional: live stream
+## 9. Dropped: live stream (decided Nov 9, not building)
 
 Only if readings must arrive in seconds. About $2 a month.
 

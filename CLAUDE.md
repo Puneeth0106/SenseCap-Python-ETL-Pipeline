@@ -16,7 +16,7 @@ An unattended pipeline on GitHub Actions: every 10 minutes it refetches the last
 3 hours, and once a day the last 72 hours, and upserts into a managed Supabase
 PostgreSQL database. Readers use the `sensor_readings_10min` view through a
 read-only role. Target: a reading is in the database within 20 minutes of the
-sensor sending it. An MQTT live stream is optional (checklist section 9).
+sensor sending it. No MQTT live stream: checklist section 9 is dropped (Nov 9).
 
 Five rules:
 1. One table, one key (`timestamp, device_eui, metric_id`), one upsert.
@@ -41,9 +41,9 @@ every checklist section, in this order:
 Also add a short entry to `docs/NOTES.md` per section: what it does, why, the
 command, what can break. Keep replies short and specific. No em dashes.
 
-## Current state (Nov 5, 2026)
+## Current state (Nov 9, 2026)
 
-Built (sections 0 to 3, plus the workflow and pings for 5 and 6):
+Built (sections 0 to 8, all ticked):
 - `sensecap_client.py`: shared fetch engine. Retries transient failures
   (`tenacity`), classifies SenseCAP's body-level `code` into retryable vs.
   permanent, and handles backward pagination for the shared 1000-point cap
@@ -55,8 +55,9 @@ Built (sections 0 to 3, plus the workflow and pings for 5 and 6):
 - `.github/workflows/telemetry_sync.yml`: CI (ruff, pytest) on push, sync on schedule.
 - `main.py`: manual CSV export tool. Dev utility, not production.
 
-Next: section 4 (backfill and verify). Not yet verified on GitHub: secrets,
-schedules, alerts. No `docs/NOTES.md` entries yet for sections 5 and 6.
+The project is complete. Section 9 (MQTT live stream) is dropped by choice.
+Verified Nov 9: 485 unattended runs all `success`, median latency 9 minutes.
+Monthly CSV download stays as a backup. Next work, if any: the dashboard.
 
 Known sensor state (Oct 7, 2026):
 - Beta has been offline since before Sept 1, 2026. Known and accepted. Do not
