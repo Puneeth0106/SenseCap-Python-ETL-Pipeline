@@ -85,7 +85,7 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 - [x] Same window twice: 0 new rows. Nov 5: see section 4.
 - [x] Kill a run midway, then rerun: complete, no duplicates. Nov 5: 0 duplicate keys. Killed runs now close as `abandoned`.
 - [x] Wrong database password: run fails and the `job-ran` alert arrives. Nov 5: email at 21:36 UTC, on time.
-- [ ] Disable the workflow for 2 hours: `alpha-fresh` alert arrives. Enable it again and the gap fills.
+- [x] Disable the workflow for 2 hours: `alpha-fresh` alert arrives. Enable it again and the gap fills. Nov 5: down at 22:06 UTC, on time; one run refilled all 13 ten minute slots.
 - [ ] 24 hours unattended: every run is `success` and Alpha has about 144 rows in the 10 minute view.
 
 ## 8. Cleanup and runbook
