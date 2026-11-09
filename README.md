@@ -31,6 +31,7 @@ python daily_load.py --hours 3      # same as the 10 minute job
 python daily_load.py --hours 72     # same as the nightly job
 python daily_load.py --hours 2136   # 89 day backfill (SenseCAP keeps 90 days)
 python main.py                      # manual CSV export to data/ (dev tool)
+python load_csv.py FILE.csv ...     # load CSV exports into the database
 ```
 
 To fill a gap, run `daily_load.py` with an `--hours` value that covers it.
@@ -54,6 +55,7 @@ CI runs both on every push.
 | `telemetry_store.py` | `to_utc`, `to_rows`, `upsert_rows`, run logging |
 | `daily_load.py` | Production loader, `--hours N` |
 | `main.py` | Manual CSV export tool |
+| `load_csv.py` | Loads CSV exports into the database |
 | `migrations/` | SQL schema and views, applied in order |
 | `tests/` | Unit tests and a captured API response |
 | `.github/workflows/` | Scheduled sync and CI |
@@ -125,7 +127,8 @@ matches the October CSV, reruns add no rows, a killed run recovers, both alerts
 fire, a 2 hour outage refills, and 24 hours ran unattended. Median delay from
 sensor to database is 9 minutes.
 
-Next: load the pre-project monthly CSVs with `load_csv.py`. The monthly CSV
-download stays as a backup.
+Old data from Oct 2025 to Apr 2026 is loaded from the pre-project CSVs. Those
+files have gaps (the old downloader stopped at 1000 points per request), and
+SenseCAP no longer has that data. The monthly CSV download stays as a backup.
 
 Beta is offline and marked inactive. It loads on its own when it returns.
