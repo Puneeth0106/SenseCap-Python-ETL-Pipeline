@@ -63,7 +63,7 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 - [x] Run `python daily_load.py --hours 2136` (89 days; SenseCAP rejects starts older than 90 days with code 11202). Nov 5: 43,346 Alpha rows.
 - [x] Alpha timestamps in the database for Oct 1 to Oct 7 14:44 UTC equal the 2,363 rows in `alpha_october_2026.csv`. Nov 5: 2,363 of 2,363 match, 0 missing, 0 extra.
 - [x] Run it again. Row count does not change. Nov 5: 43,173 before and after.
-- [ ] Optional: load older monthly CSVs with a small `load_csv.py`.
+- [ ] Load older monthly CSVs (from before this project) with a small `load_csv.py`. Decided Nov 9: yes.
 
 ## 5. Automation
 
@@ -78,7 +78,7 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 - [x] End of each successful run: ping `job-ran` (period 10 minutes, grace 30).
 - [x] Ping `alpha-fresh` only when Alpha's newest row is under 30 minutes old (period 10 minutes, grace 60).
 - [x] Set Healthchecks to email you.
-- [ ] No check for Beta until it is back in the field.
+- [x] No check for Beta until it is back in the field. Nov 9: only Alpha has a check.
 
 ## 7. Reliability tests
 
@@ -86,7 +86,7 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 - [x] Kill a run midway, then rerun: complete, no duplicates. Nov 5: 0 duplicate keys. Killed runs now close as `abandoned`.
 - [x] Wrong database password: run fails and the `job-ran` alert arrives. Nov 5: email at 21:36 UTC, on time.
 - [x] Disable the workflow for 2 hours: `alpha-fresh` alert arrives. Enable it again and the gap fills. Nov 5: down at 22:06 UTC, on time; one run refilled all 13 ten minute slots.
-- [ ] 24 hours unattended: every run is `success` and Alpha has about 144 rows in the 10 minute view.
+- [x] 24 hours unattended: every run is `success` and Alpha has about 144 rows in the 10 minute view. Nov 9: 485 runs since Nov 5, all `success`; 331 Alpha readings in 24 hours, no gaps.
 
 ## 8. Cleanup and runbook
 
@@ -94,7 +94,7 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 - [x] README: how to run, how to backfill a gap (`--hours N`), how to rotate keys, what each alert means.
 - [x] Update `CLAUDE.md` to the new current state. Keep it current after each section.
 - [x] Remove `PIPELINE_APPROACH.md` and `NEW_APPROACH.md` (replaced by this file).
-- [ ] Stop the monthly manual CSV download. Keep `main.py` as a tool.
+- [x] ~~Stop the monthly manual CSV download.~~ Decided Nov 9: keep the monthly CSV download as a backup. Keep `main.py` as a tool.
 
 ## 9. Optional: live stream
 
@@ -108,7 +108,7 @@ Only if readings must arrive in seconds. About $2 a month.
 
 ## Done when
 
-- [ ] A reading is in the database within 20 minutes of the sensor sending it.
-- [ ] Any rerun adds 0 duplicate rows.
-- [ ] A 2 hour outage refills itself.
-- [ ] One hour of silence from Alpha sends an alert.
+- [x] A reading is in the database within 20 minutes of the sensor sending it. Nov 9: median 9 minutes, 92% within 20, worst 40 (GitHub runs the schedule late at times).
+- [x] Any rerun adds 0 duplicate rows.
+- [x] A 2 hour outage refills itself.
+- [x] One hour of silence from Alpha sends an alert. Fires at about 70 minutes (10 minute period plus 60 grace).

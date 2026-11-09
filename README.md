@@ -120,9 +120,12 @@ SELECT max(timestamp) FROM sensor_telemetry WHERE device_alias = 'Alpha';
 
 ## Status
 
-Built and running on GitHub every 10 minutes. Verified so far: the backfill
-matches the October CSV, reruns add no rows, a killed run recovers, and a
-failing job sends the `job-ran` alert. Still to verify: the Alpha silence
-alert, outage refill, and 24 hours unattended.
+Built and running on GitHub every 10 minutes. All tests passed: the backfill
+matches the October CSV, reruns add no rows, a killed run recovers, both alerts
+fire, a 2 hour outage refills, and 24 hours ran unattended. Median delay from
+sensor to database is 9 minutes.
+
+Next: load the pre-project monthly CSVs with `load_csv.py`. The monthly CSV
+download stays as a backup.
 
 Beta is offline and marked inactive. It loads on its own when it returns.

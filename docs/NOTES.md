@@ -96,3 +96,82 @@ Watch for log lines: `fetching ...`, `api_calls=N rows_fetched=N rows_loaded=N`,
 - `DEVICE_EUIS` in `.env` must be comma-separated EUIs matching `sensor_devices.device_eui` exactly.
 - A device not in `sensor_devices` will still fetch data but `upsert_rows` will fail the FK constraint. Seed the device first.
 - The session pooler URL (port 5432) is required — the direct connection (IPv6) fails on GitHub Actions runners.
+
+## Section 4: Backfill and verify (Nov 5, 2026)
+
+**What:** Loaded 89 days of Alpha history with `daily_load.py --hours 2136`, then checked it against the October CSV.
+
+**Why:**
+- There is no separate backfill script. A backfill is the normal loader with a bigger window.
+- Matching the CSV row by row proves the loader drops nothing.
+
+**Command:**
+```bash
+python daily_load.py --hours 2136
+```
+Result: 43,346 rows. 2,363 of 2,363 CSV timestamps match. A rerun left the count at 43,173.
+
+**What can break:**
+- `--hours 2160` or more fails with `code=11202`. SenseCAP keeps only about 90 days.
+- Data older than 90 days can only come from the old CSV files (`load_csv.py`, planned).
+
+## Section 5: Automation (Nov 5, 2026)
+
+**What:** `.github/workflows/telemetry_sync.yml` runs `--hours 3` every 10 minutes and `--hours 72` once a day at 02:17 UTC. A "Run workflow" button takes an `hours` input. CI runs ruff and pytest on every push.
+
+**Why:**
+- GitHub Actions is free for a public repo and needs no server.
+- The 3 hour window means a few missed runs heal by themselves. The 72 hour run covers longer outages.
+- `concurrency` stops two runs from overlapping.
+
+**Command:** Actions tab, Telemetry sync, Run workflow, set `hours`.
+
+**What can break:**
+- Wrong or pasted-with-spaces secrets. Happened Nov 5 (`code=11104`). Fixed with `gh secret set`.
+- GitHub runs schedules late at busy times. Seen: gaps up to 41 minutes. No data is lost.
+- Scheduled workflows stop after 60 days with no repo activity. `job-ran` will alert.
+
+## Section 6: Alerts (Nov 5, 2026)
+
+**What:** Each successful run pings `job-ran`. It pings `alpha-fresh` only when Alpha's newest reading is under 30 minutes old. Healthchecks emails on DOWN and UP.
+
+**Why:**
+- `job-ran` catches a broken job. `alpha-fresh` catches a quiet sensor while the job still works.
+- No Beta check. Beta is offline on purpose.
+
+**Command:** none. Check status on healthchecks.io.
+
+**What can break:**
+- A laptop run also pings, so it can hide a broken GitHub job. Don't run locally during tests.
+- `alpha-fresh` fires at about 70 minutes, not 60 (10 minute period plus 60 grace).
+
+## Section 7: Reliability tests (Nov 5 to 9, 2026)
+
+**What:** Five break-it tests, all passed.
+- Same window twice: 0 new rows.
+- Killed run, then rerun: 0 duplicates. Stuck runs are now closed as `abandoned`.
+- Wrong database password: `job-ran` alert at 21:36 UTC, on time.
+- Workflow off for 2 hours: `alpha-fresh` alert at 22:06 UTC. One run refilled all 13 slots.
+- 24 hours unattended: 485 runs since Nov 5, all `success`. Median delay from sensor to database is 9 minutes; 92% under 20.
+
+**Why:** Proves the pipeline heals and alerts without anyone watching.
+
+**Command (health check):**
+```sql
+SELECT status, count(*) FROM ingest_runs
+WHERE started_at > now() - interval '24 hours' GROUP BY 1;
+```
+
+**What can break:**
+- Late GitHub schedules push a few readings past 20 minutes (worst seen: 40).
+
+## Section 8: Cleanup and runbook (Nov 5 to 9, 2026)
+
+**What:** Removed old docs and `docker-compose.yml`. Added a Runbook to `README.md`: alert meanings, common errors, filling a gap, changing keys.
+
+**Why:** Anyone can fix a failure from the README alone.
+
+**Decision (Nov 9):** Keep the monthly manual CSV download. The CSVs are a backup outside the database.
+
+**What can break:**
+- The README goes stale if the workflow or secrets change. Update it in the same PR.
