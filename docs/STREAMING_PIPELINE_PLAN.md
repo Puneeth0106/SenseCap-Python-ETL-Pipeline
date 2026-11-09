@@ -63,7 +63,7 @@ SenseCAP API -> daily_load.py (GitHub Actions, every 10 minutes) -> Supabase sen
 - [x] Run `python daily_load.py --hours 2136` (89 days; SenseCAP rejects starts older than 90 days with code 11202). Nov 5: 43,346 Alpha rows.
 - [x] Alpha timestamps in the database for Oct 1 to Oct 7 14:44 UTC equal the 2,363 rows in `alpha_october_2026.csv`. Nov 5: 2,363 of 2,363 match, 0 missing, 0 extra.
 - [x] Run it again. Row count does not change. Nov 5: 43,173 before and after.
-- [ ] Load older monthly CSVs (from before this project) with a small `load_csv.py`. Decided Nov 9: yes.
+- [x] Load older monthly CSVs (from before this project) with a small `load_csv.py`. Nov 9: 11 files from the precision-farming repo, 48,536 rows (Oct 2025 to Apr 2026). A second load added 0 rows.
 
 ## 5. Automation
 

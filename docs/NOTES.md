@@ -175,3 +175,20 @@ WHERE started_at > now() - interval '24 hours' GROUP BY 1;
 
 **What can break:**
 - The README goes stale if the workflow or secrets change. Update it in the same PR.
+
+## Section 4 addendum: old CSVs (Nov 9, 2026)
+
+**What:** `load_csv.py` loads CSV exports into `sensor_telemetry`. Loaded the 11 pre-project files from `mdkamrulhasan/precision-farming` (`data/local-sensors-data/`), kept locally in `data/local-sensors-data/archive/`.
+
+**Why:** SenseCAP keeps only 90 days. The old CSVs are the only copy of Oct 2025 to Apr 2026.
+
+**Command:**
+```bash
+python load_csv.py data/local-sensors-data/archive/*.csv
+```
+Result: 48,536 rows (Alpha 23,570, Beta 24,966). A second load changed nothing.
+
+**What can break:**
+- An Alias not in `sensor_devices` stops the load. Add the device first.
+- The old files have gaps. Row counts are exact multiples of 1000: the old downloader hit the 1000 point cap. That data is gone for good.
+- No Healthchecks ping, on purpose. A manual load should not hide a broken job.
