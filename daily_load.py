@@ -108,9 +108,7 @@ def _trigger_source(env):
 
 # Looks up the device alias from sensor_devices; falls back to the EUI if not found.
 def _alias(conn, eui):
-    row = conn.execute(
-        "SELECT device_alias FROM sensor_devices WHERE device_eui = %s", (eui,)
-    ).fetchone()
+    row = conn.execute("SELECT device_alias FROM sensor_devices WHERE device_eui = %s", (eui,)).fetchone()
     return row[0] if row else eui
 
 
@@ -134,23 +132,27 @@ def _alpha_is_fresh(conn):
     return bool(row and row[0] and timedelta(0) <= datetime.now(UTC) - row[0] < timedelta(minutes=30))
 
 
+# Checks that any sensor sent a real (above 0) soil moisture reading in the last 30 minutes.
+# A probe out of soil reads 0, so 0 does not count as a live reading.
+def _moisture_is_live(conn):
+    row = conn.execute(
+        "SELECT max(timestamp) FROM sensor_telemetry WHERE metric_name = %s AND value > 0",
+        ("Soil_Moisture",),
+    ).fetchone()
+    return bool(row and row[0] and timedelta(0) <= datetime.now(UTC) - row[0] < timedelta(minutes=30))
+
+
 # Runs the fixed-window loader and records its result.
 def main():
-    parser = argparse.ArgumentParser(
-        description="Load SenseCAP telemetry into Supabase."
-    )
-    parser.add_argument(
-        "--hours", type=int, required=True, help="How many hours back to fetch."
-    )
+    parser = argparse.ArgumentParser(description="Load SenseCAP telemetry into Supabase.")
+    parser.add_argument("--hours", type=int, required=True, help="How many hours back to fetch.")
     args = parser.parse_args()
 
     env, device_euis = _load_config()
 
     now = datetime.now(UTC)
     start_dt = now - timedelta(hours=args.hours)
-    log.info(
-        "Window: %s to %s (%d hours)", start_dt.isoformat(), now.isoformat(), args.hours
-    )
+    log.info("Window: %s to %s (%d hours)", start_dt.isoformat(), now.isoformat(), args.hours)
 
     # Use prepare_threshold=None for pgBouncer / Supabase session pooler compatibility.
     conn = psycopg.connect(env["DATABASE_URL"], prepare_threshold=None)
@@ -158,9 +160,7 @@ def main():
     closed = close_stale_runs(conn)
     if closed:
         log.warning("Marked %d stale 'running' run(s) as failed", closed)
-    run_id = start_run(
-        conn, trigger_source=_trigger_source(env), devices_requested=len(device_euis)
-    )
+    run_id = start_run(conn, trigger_source=_trigger_source(env), devices_requested=len(device_euis))
     total_api_calls = total_fetched = total_loaded = 0
     overall_status = "success"
     error_msg = None
@@ -191,10 +191,15 @@ def main():
         sys.exit(1)
 
     fresh = _alpha_is_fresh(conn)
+    moisture_live = _moisture_is_live(conn)
     conn.close()
     _ping(env.get("HC_JOB_URL"), "job-ran")
     if fresh:
         _ping(env.get("HC_ALPHA_URL"), "alpha-fresh")
+    if moisture_live:
+        _ping(env.get("HC_MOISTURE_URL"), "moisture-live")
+    else:
+        log.warning("No soil moisture reading above 0 in the last 30 minutes")
 
     log.info(
         "Done: api_calls=%d rows_fetched=%d rows_loaded=%d",

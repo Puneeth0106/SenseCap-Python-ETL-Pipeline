@@ -42,6 +42,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       HC_JOB_URL: ${{ secrets.HC_JOB_URL }}
       HC_ALPHA_URL: ${{ secrets.HC_ALPHA_URL }}
+      HC_MOISTURE_URL: ${{ secrets.HC_MOISTURE_URL }}
       HOURS: ${{ inputs.hours || (github.event.schedule == '17 2 * * *' && '72') || '3' }}
     steps:
       - uses: actions/checkout@v4
